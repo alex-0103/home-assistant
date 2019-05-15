@@ -1,0 +1,25 @@
+{
+    "config": {
+        "abort": {
+            "already_configured": "Warmup is already configured"
+        },
+        "error": {
+            "connection_error": "Can't connect to Warmup. Make sure your credentials are correct",
+            "invalid_password": "Invalid password!"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "username": "Username (e-mail)",
+                    "password": "Password",
+                    "location": "Location Name",
+                    "room": "Room Name",
+                    "name": "Name"
+                },
+                "description": "Please enter connection settings of your [Warmup](https://my.warmup.com/login) node.",
+                "title": "Warmup"
+            },
+        },
+        "title": "Warmup"
+    }
+}

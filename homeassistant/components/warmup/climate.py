@@ -9,6 +9,7 @@ from homeassistant.const import (
     TEMP_CELSIUS)
 from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
+from homeassistant.util import slugify
 from homeassistant.components.climate.const import (
     SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE, SUPPORT_OPERATION_MODE,
     SUPPORT_ON_OFF, STATE_AUTO, STATE_MANUAL)
@@ -34,16 +35,28 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
                  default=DEFAULT_TARGET_TEMP): vol.Coerce(float),
 })
 
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    """Set up Warmup from a config entry."""
+    config = config_entry
+
+    def add_entities(entities, update_before_add=False):
+        """Sync version of async add devices."""
+        hass.add_job(async_add_entities, entities, update_before_add)
+
+    await hass.async_add_executor_job(
+        setup_platform, hass, config,
+        add_entities, None)
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Demo climate devices."""
     _LOGGER.info("Setting up platform for Warmup component")
-    name = config.get(CONF_NAME)
-    user = config.get(CONF_USERNAME)
-    password = config.get(CONF_PASSWORD)
-    location = config.get(CONF_LOCATION)
-    room = config.get(CONF_ROOM)
-    target_temp = config.get(CONF_TARGET_TEMP)
+    _LOGGER.info(dir(config))
+    name = config.data[CONF_NAME]
+    user = config.data[CONF_USERNAME]
+    password = config.data[CONF_PASSWORD]
+    location = config.data[CONF_LOCATION]
+    room = config.data[CONF_ROOM]
+    target_temp = config.data.get(CONF_TARGET_TEMP, DEFAULT_TARGET_TEMP)
 
     from warmup4ie import Warmup4IEDevice
     device = Warmup4IEDevice(user, password, location, room,
@@ -51,8 +64,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if device is None or not device.setup_finished:
         raise PlatformNotReady
 
+    entity = Warmup(hass, name, device)
+    entity.entity_id = 'climate.warmup4ie_{}'.format(slugify(name))
     add_entities(
-        [Warmup(hass, name, device)])
+        [entity])
 
 
 class Warmup(ClimateDevice):

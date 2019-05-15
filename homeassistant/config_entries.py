@@ -185,6 +185,7 @@ FLOWS = [
     'twilio',
     'unifi',
     'upnp',
+    'warmup',
     'zha',
     'zone',
     'zwave',
