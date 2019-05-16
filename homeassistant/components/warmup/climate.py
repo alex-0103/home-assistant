@@ -65,7 +65,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         raise PlatformNotReady
 
     entity = Warmup(hass, name, device)
-    entity.entity_id = 'climate.warmup4ie_{}'.format(slugify(name))
     add_entities(
         [entity])
 
@@ -86,6 +85,11 @@ class Warmup(ClimateDevice):
         self._on = True
         self._current_operation_mode = STATE_MANUAL
         self._device = device
+
+    @property
+    def unique_id(self) -> str:
+        """Return a unique id."""
+        return '{}, {}'.format("warmup", slugify(self._name))
 
     @property
     def supported_features(self):

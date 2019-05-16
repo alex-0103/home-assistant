@@ -1,0 +1,21 @@
+{
+    "config": {
+        "error": {
+            "name_exists": "Name existiert bereits"
+        },
+        "step": {
+            "user": {
+                "data": {
+                    "username": "E-Mail Adresse",
+                    "password": "Passwort",
+                    "location": "Standort (Name aus Warmup Web-Interface)",
+                    "room": "Raum (Name aus Warmup Web-Interface)",
+                    "name": "Benennung",
+                    "target_temp": "Standardtemperatur (°C)"
+                },
+                "title": "Warmup 4IE Thermostat"
+            }
+        },
+        "title": "Warmup 4IE Thermostat"
+    }
+}
