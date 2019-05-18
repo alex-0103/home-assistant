@@ -7,11 +7,7 @@
             "user": {
                 "data": {
                     "username": "E-Mail Adresse",
-                    "password": "Passwort",
-                    "location": "Standort (Name aus Warmup Web-Interface)",
-                    "room": "Raum (Name aus Warmup Web-Interface)",
-                    "name": "Benennung",
-                    "target_temp": "Standardtemperatur (°C)"
+                    "password": "Passwort"
                 },
                 "title": "Warmup 4IE Thermostat"
             }

@@ -11,10 +11,7 @@
             "user": {
                 "data": {
                     "username": "Username (e-mail)",
-                    "password": "Password",
-                    "location": "Location Name",
-                    "room": "Room Name",
-                    "name": "Name"
+                    "password": "Password"
                 },
                 "description": "Please enter connection settings of your [Warmup](https://my.warmup.com/login) node.",
                 "title": "Warmup"

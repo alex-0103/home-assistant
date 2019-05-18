@@ -3,41 +3,45 @@ import logging
 
 import voluptuous as vol
 
+from collections import OrderedDict
+from homeassistant import config_entries
+
+from homeassistant.components import warmup
 from homeassistant.components.climate import PLATFORM_SCHEMA, ClimateDevice
+from homeassistant.components.climate.const import (
+    SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE, SUPPORT_OPERATION_MODE,
+    SUPPORT_ON_OFF, STATE_AUTO, STATE_MANUAL)
 from homeassistant.const import (
     ATTR_TEMPERATURE, CONF_NAME, CONF_PASSWORD, CONF_USERNAME, CONF_ROOM,
     TEMP_CELSIUS)
 from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
 from homeassistant.util import slugify
-from homeassistant.components.climate.const import (
-    SUPPORT_TARGET_TEMPERATURE, SUPPORT_AWAY_MODE, SUPPORT_OPERATION_MODE,
-    SUPPORT_ON_OFF, STATE_AUTO, STATE_MANUAL)
+from homeassistant.components.warmup.const import (
+    CONF_LOCATION, CONF_TARGET_TEMP, DEFAULT_NAME,
+    DEFAULT_TARGET_TEMP)
+
 
 _LOGGER = logging.getLogger(__name__)
 
 SUPPORT_FLAGS = (SUPPORT_TARGET_TEMPERATURE | SUPPORT_AWAY_MODE |
                  SUPPORT_OPERATION_MODE | SUPPORT_ON_OFF)
 
-CONF_LOCATION = 'location'
-CONF_TARGET_TEMP = 'target_temp'
-
-DEFAULT_NAME = 'warmup4ie'
-DEFAULT_TARGET_TEMP = 20
-
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Required(CONF_USERNAME): cv.string,
     vol.Required(CONF_PASSWORD): cv.string,
-    vol.Required(CONF_LOCATION): cv.string,
-    vol.Required(CONF_ROOM): cv.string,
+    vol.Optional(CONF_LOCATION): cv.string,
+    vol.Optional(CONF_ROOM): cv.string,
     vol.Optional(CONF_TARGET_TEMP,
                  default=DEFAULT_TARGET_TEMP): vol.Coerce(float),
 })
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     """Set up Warmup from a config entry."""
-    config = config_entry
+    config = config_entry.data
+    
+
 
     def add_entities(entities, update_before_add=False):
         """Sync version of async add devices."""
@@ -50,23 +54,40 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Set up the Demo climate devices."""
     _LOGGER.info("Setting up platform for Warmup component")
-    _LOGGER.info(dir(config))
-    name = config.data[CONF_NAME]
-    user = config.data[CONF_USERNAME]
-    password = config.data[CONF_PASSWORD]
-    location = config.data[CONF_LOCATION]
-    room = config.data[CONF_ROOM]
-    target_temp = config.data.get(CONF_TARGET_TEMP, DEFAULT_TARGET_TEMP)
+
+    name = config.get(CONF_NAME)
+    user = config.get(CONF_USERNAME)
+    password = config.get(CONF_PASSWORD)
+    location = config.get(CONF_LOCATION)
+    room = config.get(CONF_ROOM)
+    target_temp = config.get(CONF_TARGET_TEMP, DEFAULT_TARGET_TEMP)
+
 
     from warmup4ie import Warmup4IEDevice
-    device = Warmup4IEDevice(user, password, location, room,
-                             target_temp)
-    if device is None or not device.setup_finished:
-        raise PlatformNotReady
+    
+    entities = list()
+    #if user has configured specific device in configuration.yaml
+    if location is not None and room  is not None:
+        device = Warmup4IEDevice(user, password, location, room,
+                                 target_temp)
+        if device is None or not device.setup_finished:
+            raise PlatformNotReady
 
-    entity = Warmup(hass, name, device)
-    add_entities(
-        [entity])
+        entity = Warmup(hass, name, device)
+        entities.append(entity)
+    #else query all available devices
+    else:
+        all_devices = Warmup4IEDevice(user, password).get_all_devices()
+        for found_device in all_devices:
+            device = Warmup4IEDevice(user, password, found_device.loc_name, found_device.room_name)
+            if device is None or not device.setup_finished:
+                raise PlatformNotReady
+            name = found_device.room_name
+            entity = Warmup(hass, name, device)
+            entities.append(entity)
+
+    
+    add_entities(entities)
 
 
 class Warmup(ClimateDevice):
@@ -87,9 +108,21 @@ class Warmup(ClimateDevice):
         self._device = device
 
     @property
+    def device_info(self):
+        return {
+            'identifiers': {
+                # Serial numbers are unique identifiers within a specific domain
+                (warmup.DOMAIN, self.unique_id)
+            },
+            'name': self._name,
+            'manufacturer': "Warmup",
+            'model': "4IE"
+        }
+
+    @property
     def unique_id(self) -> str:
         """Return a unique id."""
-        return '{}, {}'.format("warmup", slugify(self._name))
+        return '{}, {}, {}'.format(self._device.get_location_id(), self._device.get_room_id(), self._device.get_SN())
 
     @property
     def supported_features(self):

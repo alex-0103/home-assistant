@@ -1,6 +1,6 @@
 """The warmup component."""
 import logging
-
+DOMAIN = 'warmup'
 
 from .config_flow import WarmupFlowHandler  # noqa: pylint: disable=unused-import
 
